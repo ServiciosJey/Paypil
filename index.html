@@ -152,11 +152,15 @@
         // Toma historial sin system y arma payload
         const msgs = [systemPrompt, ...history.filter(m => m.role !== 'system').slice(-LAST_N)];
 
-        const res = await fetch(FLOW_URL, {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ session_id: sessionId, messages: msgs })
-        });
+       const res = await fetch(FLOW_URL, {
+  method: 'POST',
+  headers: {'Content-Type':'application/json'},
+  body: JSON.stringify({
+    session_id: sessionId,
+    message_text: content   // <-- SOLO el texto actual
+  })
+});
+
 
         if(!res.ok){
           const txt = await res.text();
