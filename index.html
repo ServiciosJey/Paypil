@@ -65,8 +65,11 @@
   async function getEphemeral() {
     const url = tokenInput.value.trim();
     if (!url) throw new Error('Debes pegar la URL de tu flujo de Power Automate');
-    const res = await fetch(url, { method: 'POST' });
-    if (!res.ok) throw new Error('No se pudo obtener token efímero');
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    if (!res.ok) {
+      const txt = await res.text().catch(()=> '');
+      throw new Error(`No se pudo obtener token efímero (HTTP ${res.status}) ${txt ? '→ ' + txt : ''}`);
+    }
     return res.json(); // { client_secret: { value }, id, expires_at, model, ... }
   }
 
