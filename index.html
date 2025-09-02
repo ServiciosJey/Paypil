@@ -1,156 +1,68 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Agente de Voz — OpenAI Realtime</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asistente Virtual - Servicios Jey</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 24px; background:#0b0b0c; color:#fff; }
-    .card { max-width: 720px; margin: 0 auto; background:#121214; border:1px solid #222; border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
-    h1 { font-size: 22px; margin: 0 0 12px; }
-    .row { display:flex; gap:12px; flex-wrap: wrap; }
-    button { cursor: pointer; border: 1px solid #2a2a2e; background:#1b1b1f; color:#fff; padding: 10px 14px; border-radius:10px; font-weight:600; }
-    button:disabled { opacity:.5; cursor:not-allowed; }
-    .pill { font-size: 12px; opacity:.85; }
-    .log { background:#0f0f12; border:1px dashed #2b2b31; border-radius:12px; padding:10px; height:160px; overflow:auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
-    .small { font-size: 12px; opacity:.8; }
-    .ok { color:#86efac }
-    .bad { color:#fca5a5 }
-    .hidden { display:none }
-    audio { width:100%; margin-top:12px; }
-    label { display:block; font-size:12px; opacity:.8; margin-top:10px; }
-    input[type="text"], select { width:100%; padding:8px 10px; border-radius:8px; border:1px solid #2a2a2e; background:#0f0f12; color:#fff }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    #chat-container { width: 100%; max-width: 400px; height: 80vh; background: #fff; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: flex; flex-direction: column; }
+    #chat { flex: 1; padding: 15px; overflow-y: auto; }
+    .msg { margin: 8px 0; padding: 8px 12px; border-radius: 15px; max-width: 80%; word-wrap: break-word; }
+    .user { align-self: flex-end; background: #0078d7; color: white; border-bottom-right-radius: 0; }
+    .bot { align-self: flex-start; background: #e5e5ea; color: black; border-bottom-left-radius: 0; }
+    #inputBox { display: flex; padding: 10px; border-top: 1px solid #ccc; }
+    input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; outline: none; }
+    button { margin-left: 8px; padding: 10px 16px; border: none; border-radius: 20px; background: #0078d7; color: white; cursor: pointer; }
+    button:hover { background: #005fa3; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Agente de Voz (OpenAI Realtime)</h1>
-    <p class="small">Este cliente WebRTC usa un token efímero servido por tu flujo de Power Automate.</p>
-
-    <label>URL del endpoint (Power Automate) que emite el token efímero</label>
-    <input id="tokenUrl" type="text" placeholder="https://prod-00.westus.logic.azure.com:443/workflows/.../triggers/manual/paths/invoke?..." />
-
-    <div class="row" style="margin-top:12px">
-      <button id="connectBtn">Conectar</button>
-      <button id="muteBtn" disabled>Silenciar micrófono</button>
-      <button id="hangBtn" disabled>Colgar</button>
-      <span id="status" class="pill"></span>
+  <div id="chat-container">
+    <div id="chat"></div>
+    <div id="inputBox">
+      <input type="text" id="input" placeholder="Escribe tu mensaje..." onkeydown="if(event.key==='Enter'){sendMsg()}" />
+      <button onclick="sendMsg()">Enviar</button>
     </div>
-
-    <audio id="remoteAudio" autoplay playsinline></audio>
-
-    <div class="log" id="log"></div>
   </div>
 
-<script>
-(async () => {
-  const remoteAudio = document.getElementById('remoteAudio');
-  const connectBtn = document.getElementById('connectBtn');
-  const hangBtn = document.getElementById('hangBtn');
-  const muteBtn = document.getElementById('muteBtn');
-  const tokenInput = document.getElementById('tokenUrl');
-  const statusEl = document.getElementById('status');
-  const logEl = document.getElementById('log');
+  <script>
+    async function sendMsg() {
+      const input = document.getElementById("input");
+      const chat = document.getElementById("chat");
+      const userMsg = input.value.trim();
+      if (!userMsg) return;
 
-  let pc, micStream, dataChannel;
+      // Mostrar mensaje del usuario
+      const userDiv = document.createElement("div");
+      userDiv.className = "msg user";
+      userDiv.textContent = userMsg;
+      chat.appendChild(userDiv);
 
-  function log(msg, cls) {
-    const el = document.createElement('div');
-    el.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-    if (cls) el.className = cls;
-    logEl.appendChild(el);
-    logEl.scrollTop = logEl.scrollHeight;
-  }
+      input.value = "";
+      chat.scrollTop = chat.scrollHeight;
 
-  async function getEphemeral() {
-    const url = tokenInput.value.trim();
-    if (!url) throw new Error('Debes pegar la URL de tu flujo de Power Automate');
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-    if (!res.ok) {
-      const txt = await res.text().catch(()=> '');
-      throw new Error(`No se pudo obtener token efímero (HTTP ${res.status}) ${txt ? '→ ' + txt : ''}`);
+      try {
+        const resp = await fetch("https://prod-77.westus.logic.azure.com:443/workflows/92e0098f17414cf993f5cce07eb70ada/triggers/manual/paths/invoke?api-version=2016-06-01", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ "message": userMsg })
+        });
+
+        const data = await resp.json();
+
+        const botDiv = document.createElement("div");
+        botDiv.className = "msg bot";
+        botDiv.textContent = data.reply || "(Sin respuesta)";
+        chat.appendChild(botDiv);
+        chat.scrollTop = chat.scrollHeight;
+      } catch (error) {
+        const botDiv = document.createElement("div");
+        botDiv.className = "msg bot";
+        botDiv.textContent = "Error al conectar con el asistente.";
+        chat.appendChild(botDiv);
+      }
     }
-    return res.json(); // { client_secret: { value }, id, expires_at, model, ... }
-  }
-
-  async function connect() {
-    connectBtn.disabled = true;
-    statusEl.textContent = 'Conectando…';
-    log('Solicitando token efímero…');
-    try {
-      const session = await getEphemeral();
-      const eph = session?.client_secret?.value || session?.client_secret || session?.token || '';
-      if (!eph) throw new Error('Respuesta sin token efímero');
-      log('Token efímero recibido', 'ok');
-
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      pc = new RTCPeerConnection();
-      pc.onconnectionstatechange = () => {
-        log(`RTCPeerConnection: ${pc.connectionState}`);
-        statusEl.textContent = pc.connectionState;
-      };
-
-      // Reproducir audio del modelo
-      pc.ontrack = (e) => { remoteAudio.srcObject = e.streams[0]; };
-
-      // Enviar micrófono al modelo
-      micStream.getTracks().forEach(t => pc.addTrack(t, micStream));
-
-      // Canal de datos para eventos (opcional)
-      dataChannel = pc.createDataChannel('oai-events');
-      dataChannel.onmessage = (ev) => log(`Evento: ${ev.data}`);
-
-      // Crear oferta local
-      const offer = await pc.createOffer({ offerToReceiveAudio: true });
-      await pc.setLocalDescription(offer);
-
-      // Intercambiar SDP con OpenAI
-      const sdpRes = await fetch('https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${eph}`,
-          'Content-Type': 'application/sdp'
-        },
-        body: offer.sdp
-      });
-      const answerSDP = await sdpRes.text();
-      await pc.setRemoteDescription({ type: 'answer', sdp: answerSDP });
-
-      connectBtn.disabled = true;
-      hangBtn.disabled = false;
-      muteBtn.disabled = false;
-      statusEl.textContent = 'conectado';
-      log('Conectado al modelo Realtime', 'ok');
-    } catch (err) {
-      log('Error: ' + err.message, 'bad');
-      connectBtn.disabled = false;
-      statusEl.textContent = 'error';
-    }
-  }
-
-  async function hangup() {
-    if (pc) pc.close();
-    if (micStream) micStream.getTracks().forEach(t => t.stop());
-    connectBtn.disabled = false;
-    hangBtn.disabled = true;
-    muteBtn.disabled = true;
-    statusEl.textContent = 'desconectado';
-    log('Llamada finalizada');
-  }
-
-  let muted = false;
-  function toggleMute() {
-    if (!micStream) return;
-    muted = !muted;
-    micStream.getAudioTracks().forEach(t => t.enabled = !muted);
-    muteBtn.textContent = muted ? 'Reactivar micrófono' : 'Silenciar micrófono';
-  }
-
-  connectBtn.addEventListener('click', connect);
-  hangBtn.addEventListener('click', hangup);
-  muteBtn.addEventListener('click', toggleMute);
-})();
-</script>
+  </script>
 </body>
 </html>
