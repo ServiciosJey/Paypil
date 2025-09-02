@@ -669,9 +669,15 @@
   .chatbox__input button{padding:10px 16px;border:none;border-radius:999px;background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;font-weight:800;cursor:pointer;font-size:16px;}
 
   @media (max-width:420px){
-    .chat-fab{right:14px}
-    .chatbox{right:12px;left:12px;width:auto;height:70vh}
+  .chatbox{
+    left:12px;
+    right:12px;
+    width:auto;
+    height:30vh;
+    max-height:calc(100dvh - 100px - var(--kb,0px));
   }
+}
+
 </style>
 
 <button id="chatFab" class="chat-fab" aria-label="Abrir chat de BM">
